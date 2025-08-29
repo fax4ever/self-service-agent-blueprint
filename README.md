@@ -16,6 +16,7 @@ A comprehensive blueprint for building self-service AI agents with modular compo
 - [uv](https://github.com/astral-sh/uv) - Fast Python package installer
 - [Podman](https://podman.io/) or Docker - Container runtime
 - [Helm](https://helm.sh/) - Kubernetes package manager (for deployment)
+- [kubectl](https://kubernetes.io/docs/reference/kubectl/) - Kubernetes Command line tool
 
 ### Installation
 
