@@ -1,0 +1,17 @@
+name: Pull Request - Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run tests
+        run: |
+          echo "$(github.event.pull_request.head.sha)\n" >> $GITHUB_OUTPUT
+          echo "$(github.event.pull_request.head.ref)\n" >> $GITHUB_OUTPUT
+          echo "$(github.event.pull_request.head)\n" >> $GITHUB_OUTPUT
+          echo "$(github.event.pull_request)\n" >> $GITHUB_OUTPUT
+        id: run_tests
