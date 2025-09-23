@@ -354,3 +354,16 @@ else
 OC = $(shell which oc)
 endif
 endif
+
+# Uninstall the deployment and clean up
+.PHONY: install-observability-operator
+install-observability-operator:
+	@echo "Installing Observability Operator"
+	@helm install cluster-observability-operator ./helm/charts/cluster-observability-operator
+
+# Uninstall the deployment and clean up
+.PHONY: uninstall-observability-operator
+uninstall-observability-operator:
+	@echo "Uninstalling Observability Operator"
+	@helm uninstall cluster-observability-operator	
+	
