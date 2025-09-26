@@ -359,7 +359,7 @@ endif
 .PHONY: install-observability-operator
 install-observability-operator:
 	@echo "Installing Observability Operator"
-	@helm install cluster-observability-operator ./helm/charts/cluster-observability-operator
+	@helm install cluster-observability-operator ./helm/extra-charts/cluster-observability-operator
 
 # Uninstall the deployment and clean up
 .PHONY: uninstall-observability-operator
