@@ -1,0 +1,37 @@
+# Containerfile for OpenShift Origin Client (oc)
+# Builds from Red Hat UBI9 and installs the oc client
+
+FROM registry.access.redhat.com/ubi9:latest
+
+# Set maintainer
+LABEL maintainer="self-service-agent-blueprint"
+LABEL description="UBI9 with OpenShift Origin Client (oc)"
+
+# Install necessary packages
+RUN dnf update -y && \
+    dnf install -y \
+    curl \
+    tar \
+    gzip \
+    ca-certificates \
+    && dnf clean all
+
+# Set working directory
+WORKDIR /tmp
+
+# Download and install OpenShift Origin Client (oc)
+# Using the latest stable version from GitHub releases
+RUN curl -L https://github.com/openshift/origin/releases/latest/download/openshift-origin-client-tools-linux-$(uname -m).tar.gz -o oc-client.tar.gz && \
+    tar -xzf oc-client.tar.gz && \
+    mv openshift-origin-client-tools-*/oc /usr/local/bin/oc && \
+    chmod +x /usr/local/bin/oc && \
+    rm -rf oc-client.tar.gz openshift-origin-client-tools-*
+
+# Verify installation
+RUN oc version --client
+
+# Set working directory for runtime
+WORKDIR /workspace
+
+# Default command
+CMD ["oc", "version"]
