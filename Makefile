@@ -80,6 +80,9 @@ helm_request_management_args = \
     $(if $(SNOW_API_KEY),--set-string security.apiKeys.snowIntegration='$(SNOW_API_KEY)',) \
     $(if $(HR_API_KEY),--set-string security.apiKeys.hrSystem='$(HR_API_KEY)',)
 
+helm_generic_args = \
+	--set arch=$(ARCH)
+
 # Version target
 .PHONY: version
 version:
@@ -786,6 +789,7 @@ define helm_install_common
 	@$(eval LLAMA_STACK_ARGS := $(helm_llama_stack_args))
 	@$(eval REQUEST_MANAGEMENT_ARGS := $(helm_request_management_args))
 	@$(eval LOG_LEVEL_ARGS := $(if $(LOG_LEVEL),--set logLevel=$(LOG_LEVEL),))
+	@$(eval GENERIC_ARGS := $(helm_generic_args))
 
 	@echo "Cleaning up any existing jobs..."
 	@kubectl delete job -l app.kubernetes.io/component=init -n $(NAMESPACE) --ignore-not-found || true
@@ -809,6 +813,7 @@ define helm_install_common
 		--set mcp-servers.mcp-servers.self-service-agent-snow.imageTag=$(VERSION) \
 		$(REQUEST_MANAGEMENT_ARGS) \
 		$(LOG_LEVEL_ARGS) \
+		$(GENERIC_ARGS) \
 		$(if $(filter-out "",$(2)),$(2),) \
 		$(EXTRA_HELM_ARGS)
 	@echo "Waiting for main chart deployment..."
