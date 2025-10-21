@@ -21,7 +21,9 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.2"
 
-arch: linux/amd64
+# Can be run with arm architecture
+# arch: linux/arm64
+#
 
 # Test Integration Configuration
 testIntegrationEnabled: false
