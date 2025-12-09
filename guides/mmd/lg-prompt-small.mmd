@@ -1,0 +1,233 @@
+flowchart TD
+    START((🚀 Start)) --> lookup_employee
+
+    %% ===== PHASE 1: EMPLOYEE LOOKUP =====
+    subgraph phase1["📋 Phase 1: Employee Lookup"]
+        subgraph lookup_employee["lookup_employee"]
+            LE["llm_processor (temp: 0.3)<br/>Tools: get_employee_laptop_info<br/>Store: employee_info"]
+        end
+
+        subgraph classify_lookup_result["classify_lookup_result"]
+            CLR["llm_processor (temp: 0.1)<br/>allowed_tools: ['']<br/>Classify: SUCCESS / NOT_FOUND / ERROR"]
+        end
+
+        lookup_employee --> classify_lookup_result
+    end
+
+    classify_lookup_result -->|"SUCCESS"| check_eligibility
+    classify_lookup_result -->|"NOT_FOUND"| not_found_msg
+    classify_lookup_result -->|"ERROR"| error_msg
+
+    subgraph not_found_msg["❌ Not Found"]
+        NF["'Information not found in database'"]
+    end
+    not_found_msg --> END
+
+    subgraph error_msg["⚠️ Error"]
+        ER["'Issue looking up information'"]
+    end
+    error_msg --> END
+
+    %% ===== PHASE 2: ELIGIBILITY CHECK =====
+    subgraph phase2["🔍 Phase 2: Eligibility Check"]
+        subgraph check_eligibility["check_eligibility"]
+            CE["llm_processor (temp: 0.4)<br/>Query KB for refresh policy<br/>Calculate eligibility<br/>Store: laptop_eligibility"]
+        end
+
+        subgraph classify_eligibility_result["classify_eligibility_result"]
+            CER["llm_processor (temp: 0.1)<br/>allowed_tools: ['']<br/>Classify: ELIGIBLE / NOT / UNCLEAR"]
+        end
+
+        check_eligibility --> classify_eligibility_result
+    end
+
+    classify_eligibility_result -->|"ELIGIBLE"| waiting_proceed_confirmation
+    classify_eligibility_result -->|"NOT"| waiting_ineligible_user_input
+    classify_eligibility_result -->|"UNCLEAR (retry < 2)"| check_eligibility
+    classify_eligibility_result -->|"UNCLEAR (max retries)"| unclear_end
+
+    subgraph unclear_end["❓ Unclear"]
+        UE["'Having trouble determining eligibility'"]
+    end
+    unclear_end --> END
+
+    %% ===== PHASE 3A: INELIGIBLE PATH =====
+    subgraph phase3a["⚠️ Phase 3A: Ineligible User Path"]
+        subgraph waiting_ineligible_user_input["waiting_ineligible_user_input"]
+            WIU["waiting<br/>Waits for user input"]
+        end
+
+        subgraph classify_ineligible_user_intent["classify_ineligible_user_intent"]
+            CIU["intent_classifier (temp: 0.2)<br/>allowed_tools: ['']<br/>RETURN_TO_ROUTER / FAREWELL /<br/>PROCEED_ANYWAY / GENERAL_QUESTION"]
+        end
+
+        waiting_ineligible_user_input -->|"user_input"| classify_ineligible_user_intent
+    end
+
+    classify_ineligible_user_intent -->|"RETURN_TO_ROUTER"| router_return
+    classify_ineligible_user_intent -->|"FAREWELL"| farewell_end
+    classify_ineligible_user_intent -->|"PROCEED_ANYWAY"| select_laptop
+    classify_ineligible_user_intent -->|"GENERAL_QUESTION"| waiting_ineligible_user_input
+
+    subgraph farewell_end["👋 Farewell"]
+        FE["'Thank you, have a great day!'"]
+    end
+    farewell_end --> END
+
+    %% ===== PHASE 3B: ELIGIBLE PATH - PROCEED CONFIRMATION =====
+    subgraph phase3b["✅ Phase 3B: Eligible User - Proceed Confirmation"]
+        subgraph waiting_proceed_confirmation["waiting_proceed_confirmation"]
+            WPC["waiting<br/>Waits for user input"]
+        end
+
+        subgraph proceed_confirmation["proceed_confirmation"]
+            PC["intent_classifier (temp: 0.2)<br/>allowed_tools: ['']<br/>RETURN_TO_ROUTER / YES / NO / UNCLEAR"]
+        end
+
+        waiting_proceed_confirmation -->|"user_input"| proceed_confirmation
+    end
+
+    proceed_confirmation -->|"RETURN_TO_ROUTER"| router_return
+    proceed_confirmation -->|"YES"| select_laptop
+    proceed_confirmation -->|"NO"| no_proceed_end
+    proceed_confirmation -->|"UNCLEAR"| waiting_proceed_confirmation
+
+    subgraph no_proceed_end["🚫 No Proceed"]
+        NP["'Sent back to router agent'"]
+    end
+    no_proceed_end --> END
+
+    %% ===== PHASE 4: LAPTOP SELECTION =====
+    subgraph phase4["💻 Phase 4: Laptop Selection"]
+        subgraph select_laptop["select_laptop"]
+            SL["llm_processor (temp: 0.2)<br/>allowed_tools: []<br/>Query KB for laptops by region<br/>Conditional prompts for eligible/ineligible<br/>Store: laptop_options"]
+        end
+
+        subgraph validate_laptop_options["validate_laptop_options"]
+            VLO["llm_processor (temp: 0.1)<br/>allowed_tools: ['']<br/>suppress_response: true<br/>Classify: VALID / INVALID"]
+        end
+
+        select_laptop --> validate_laptop_options
+    end
+
+    validate_laptop_options -->|"VALID"| waiting_laptop_selection
+    validate_laptop_options -->|"INVALID (retry < 2)"| select_laptop
+    validate_laptop_options -->|"INVALID (max retries)"| options_error
+
+    subgraph options_error["❌ Options Error"]
+        OE["'Trouble retrieving laptop options'"]
+    end
+    options_error --> END
+
+    %% ===== PHASE 5: USER LAPTOP SELECTION =====
+    subgraph phase5["🎯 Phase 5: User Selects Laptop"]
+        subgraph waiting_laptop_selection["waiting_laptop_selection"]
+            WLS["waiting<br/>Waits for user input"]
+        end
+
+        subgraph classify_laptop_selection["classify_laptop_selection"]
+            CLS["intent_classifier (temp: 0.2)<br/>allowed_tools: ['']<br/>RETURN_TO_ROUTER / VALID_SELECTION /<br/>INVALID_SELECTION / UNCLEAR"]
+        end
+
+        subgraph confirm_laptop_selection["confirm_laptop_selection"]
+            CLSS["llm_processor (temp: 0.2)<br/>Show full specs of selected laptop<br/>Ask for ticket confirmation<br/>Store: selected_laptop_details"]
+        end
+
+        waiting_laptop_selection -->|"user_input"| classify_laptop_selection
+        classify_laptop_selection -->|"VALID_SELECTION"| confirm_laptop_selection
+    end
+
+    classify_laptop_selection -->|"RETURN_TO_ROUTER"| router_return
+    classify_laptop_selection -->|"INVALID_SELECTION"| waiting_laptop_selection
+    classify_laptop_selection -->|"UNCLEAR"| waiting_laptop_selection
+    confirm_laptop_selection --> waiting_ticket_confirmation
+
+    %% ===== PHASE 6: TICKET CONFIRMATION =====
+    subgraph phase6["🎫 Phase 6: Ticket Confirmation"]
+        subgraph waiting_ticket_confirmation["waiting_ticket_confirmation"]
+            WTC["waiting<br/>Waits for user input"]
+        end
+
+        subgraph classify_ticket_confirmation["classify_ticket_confirmation"]
+            CTC["intent_classifier (temp: 0.2)<br/>allowed_tools: ['']<br/>RETURN_TO_ROUTER / YES / NO / UNCLEAR"]
+        end
+
+        waiting_ticket_confirmation -->|"user_input"| classify_ticket_confirmation
+    end
+
+    classify_ticket_confirmation -->|"RETURN_TO_ROUTER"| router_return
+    classify_ticket_confirmation -->|"YES"| create_ticket
+    classify_ticket_confirmation -->|"NO"| no_ticket_end
+    classify_ticket_confirmation -->|"UNCLEAR"| waiting_ticket_confirmation
+
+    subgraph no_ticket_end["🚫 No Ticket"]
+        NT["'Sent back to router agent'"]
+    end
+    no_ticket_end --> END
+
+    %% ===== PHASE 7: TICKET CREATION =====
+    subgraph phase7["🎫 Phase 7: Create Ticket"]
+        subgraph create_ticket["create_ticket"]
+            CT["llm_processor (temp: 0.3)<br/>Tools: open_laptop_refresh_ticket<br/>Extract: ticket_number (REQ pattern)"]
+        end
+    end
+
+    create_ticket -->|"REQ found"| waiting_post_ticket_input
+    create_ticket -->|"Failed (retry < 2)"| create_ticket
+    create_ticket -->|"Failed (max retries)"| ticket_error
+
+    subgraph ticket_error["❌ Ticket Error"]
+        TE["'Trouble creating ServiceNow ticket'"]
+    end
+    ticket_error --> END
+
+    %% ===== PHASE 8: POST-TICKET =====
+    subgraph phase8["✅ Phase 8: Post-Ticket"]
+        subgraph waiting_post_ticket_input["waiting_post_ticket_input"]
+            WPTI["waiting<br/>Waits for user input"]
+        end
+
+        subgraph classify_post_ticket_intent["classify_post_ticket_intent"]
+            CPTI["intent_classifier (temp: 0.2)<br/>allowed_tools: ['']<br/>RETURN_TO_ROUTER /<br/>TICKET_NUMBER_REQUEST /<br/>GENERAL_QUESTION"]
+        end
+
+        waiting_post_ticket_input -->|"user_input"| classify_post_ticket_intent
+    end
+
+    classify_post_ticket_intent -->|"RETURN_TO_ROUTER"| router_return
+    classify_post_ticket_intent -->|"TICKET_NUMBER_REQUEST"| waiting_post_ticket_input
+    classify_post_ticket_intent -->|"GENERAL_QUESTION"| waiting_post_ticket_input
+
+    %% ===== ROUTER RETURN =====
+    subgraph router_return["↩️ Return to Router"]
+        RR["task_complete_return_to_router<br/>_should_return_to_routing = true"]
+    end
+    router_return --> END
+
+    %% ===== END STATE =====
+    subgraph END["🔚 end (terminal)"]
+        E1["Reset to: lookup_employee<br/>Clear all data fields"]
+    end
+
+    %% ===== STYLES =====
+    style START fill:#22c55e,color:#fff
+    style END fill:#ef4444,color:#fff
+    style phase1 fill:#dbeafe,color:#1e3a8a
+    style phase2 fill:#fef3c7,color:#92400e
+    style phase3a fill:#fee2e2,color:#991b1b
+    style phase3b fill:#dcfce7,color:#166534
+    style phase4 fill:#e0e7ff,color:#3730a3
+    style phase5 fill:#fce7f3,color:#9d174d
+    style phase6 fill:#cffafe,color:#155e75
+    style phase7 fill:#d1fae5,color:#065f46
+    style phase8 fill:#f3e8ff,color:#6b21a8
+    style router_return fill:#6366f1,color:#fff
+    style not_found_msg fill:#dc2626,color:#fff
+    style error_msg fill:#dc2626,color:#fff
+    style unclear_end fill:#f59e0b,color:#fff
+    style farewell_end fill:#10b981,color:#fff
+    style no_proceed_end fill:#6b7280,color:#fff
+    style options_error fill:#dc2626,color:#fff
+    style no_ticket_end fill:#6b7280,color:#fff
+    style ticket_error fill:#dc2626,color:#fff
+

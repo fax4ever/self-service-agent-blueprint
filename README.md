@@ -11,7 +11,8 @@
    - [Architecture Overview](#16-architecture-overview)
    - [Project Structure](#17-project-structure)
    - [Laptop Refresh Implementation](#18-laptop-refresh-implementation)
-   - [Customizing for Your Use Case](#19-customizing-for-your-use-case)
+   - [Agent Workflow Diagrams](#19-agent-workflow-diagrams)
+   - [Customizing for Your Use Case](#110-customizing-for-your-use-case)
 
 2. [Prerequisites](#2-prerequisites)
 
@@ -270,7 +271,64 @@ The ServiceNow MCP server authenticates to the ServiceNow backend using a servic
 >
 > Is there anything else I can help you with?
 
-### 1.9 Customizing for Your Use Case
+### 1.9 Agent Workflow Diagrams
+
+The quickstart includes visual workflow diagrams that illustrate how each agent's state machine operates. These diagrams help you understand the conversation flow, decision points, and transitions between states.
+
+#### Available Workflow Diagrams
+
+| Agent | Diagram | Description |
+|-------|---------|-------------|
+| **Routing Agent** | [routing.png](guides/images/routing.png) | Simple routing logic that identifies user intent and directs to the appropriate specialist agent |
+| **Laptop Refresh (Big Prompt)** | [lg-prompt-big.png](guides/images/lg-prompt-big.png) | Single-state comprehensive prompt handling the full conversation flow |
+| **Laptop Refresh (Big Prompt + Safety)** | [lg-prompt-big-safer.png](guides/images/lg-prompt-big-safer.png) | Big prompt with additional security validation to prevent prompt injection |
+| **Laptop Refresh (Multi-Part)** | [lg-prompt-small.png](guides/images/lg-prompt-small.png) | Granular state machine with smaller, focused prompts for each step |
+| **Laptop Refresh (Multi-Part Scout)** | [lg-prompt-small-scout.png](guides/images/lg-prompt-small-scout.png) | Similar to multi-part with additional tool configuration |
+
+#### Routing Agent Workflow
+
+The routing agent is the entry point for all user interactions. It greets users, identifies their needs, and routes them to the appropriate specialist agent:
+
+![Routing Agent Workflow](guides/images/routing.png)
+
+**Key States:**
+- `greet_and_identify_need`: Initial greeting and service menu presentation
+- `classify_user_intent`: Determines if user needs laptop refresh, email change, or other
+- `handle_other_request`: Handles unrecognized requests with clarification
+
+#### Laptop Refresh Agent Workflows
+
+The laptop refresh agent supports two architectural approaches, each with trade-offs:
+
+**Big Prompt Architecture** (`lg-prompt-big.yaml`):
+
+![Big Prompt Workflow](guides/images/lg-prompt-big.png)
+
+- Single comprehensive prompt handles all 9 steps of the laptop refresh process
+- More flexible and conversational
+- Better at handling unexpected user inputs
+- Requires more explicit instructions to stay on topic
+
+**Multi-Part Prompt Architecture** (`lg-prompt-small.yaml`):
+
+![Multi-Part Workflow](guides/images/lg-prompt-small.png)
+
+- Each state has a focused, smaller prompt
+- More controlled conversation flow
+- Naturally stays within defined states
+- Uses fewer tokens per request but makes more LLM calls
+- Better suited for smaller models
+
+**Key Workflow Phases:**
+1. **Employee Lookup**: Retrieves user's laptop information via MCP server
+2. **Eligibility Check**: Queries knowledge base for refresh policy and calculates eligibility
+3. **Proceed Confirmation**: Handles eligible/ineligible user paths
+4. **Laptop Selection**: Presents options and validates user selection
+5. **Ticket Confirmation**: Confirms before creating ServiceNow ticket
+6. **Ticket Creation**: Creates the actual ticket via MCP server
+7. **Post-Ticket**: Handles follow-up questions and conversation completion
+
+### 1.10 Customizing for Your Use Case
 
 To adapt this quickstart for your specific IT process:
 
@@ -1604,7 +1662,7 @@ Detailed technical documentation for developers:
 
 ## 7. CUSTOMIZING FOR YOUR USE CASE
 
-The laptop refresh example demonstrates all components. This section guides you in adapting the quickstart for your own IT process.
+The laptop refresh example demonstrates all components. This section expands on [Section 1.10](#110-customizing-for-your-use-case) and guides you in adapting the quickstart for your own IT process.
 
 ### Planning Your Use Case
 

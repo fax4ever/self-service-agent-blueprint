@@ -1,0 +1,72 @@
+flowchart TD
+    START((🚀 Start)) --> greet_and_identify_need
+
+    subgraph greet_and_identify_need["👋 greet_and_identify_need"]
+        G1["llm_processor (temp: 0.3)"]
+        G2["Greet user as routing agent"]
+        G3["Ask what they need help with"]
+        G4["Mention available services:<br/>• Laptop refresh<br/>• Email address updates"]
+    end
+
+    greet_and_identify_need --> waiting_user_need
+
+    subgraph waiting_user_need["⏳ waiting_user_need"]
+        W1["waiting"]
+        W2["Waits for user to describe their need"]
+    end
+
+    waiting_user_need -->|"user_input"| classify_user_intent
+
+    subgraph classify_user_intent["🔍 classify_user_intent"]
+        C1["llm_processor (temp: 0.1)"]
+        C2["Analyze user request"]
+        C3["Classify intent:<br/>LAPTOP_REFRESH / EMAIL_CHANGE / OTHER"]
+    end
+
+    classify_user_intent -->|"LAPTOP_REFRESH"| laptop_route
+    classify_user_intent -->|"EMAIL_CHANGE"| email_route
+    classify_user_intent -->|"OTHER"| handle_other_request
+
+    subgraph laptop_route["💻 Laptop Refresh Route"]
+        LR1["Set routing_decision = 'laptop-refresh'"]
+        LR2["Add message: 'laptop-refresh'"]
+    end
+    laptop_route --> END
+
+    subgraph email_route["📧 Email Change Route"]
+        ER1["Set routing_decision = 'email-change'"]
+        ER2["Add message: 'email-change'"]
+    end
+    email_route --> END
+
+    subgraph handle_other_request["❓ handle_other_request"]
+        H1["llm_processor (temp: 0.3)"]
+        H2["Explain available services"]
+        H3["Ask user to clarify<br/>or inform cannot help"]
+    end
+
+    handle_other_request --> waiting_clarification
+
+    subgraph waiting_clarification["⏳ waiting_clarification"]
+        WC1["waiting"]
+        WC2["Waits for user clarification"]
+    end
+
+    waiting_clarification -->|"user_input"| END
+
+    subgraph END["🔚 end (terminal)"]
+        E1["No auto-reset"]
+        E2["Session manager handles<br/>routing to specialist agent"]
+    end
+
+    %% ===== STYLES =====
+    style START fill:#22c55e,color:#fff
+    style END fill:#ef4444,color:#fff
+    style greet_and_identify_need fill:#3b82f6,color:#fff
+    style waiting_user_need fill:#6366f1,color:#fff
+    style classify_user_intent fill:#f59e0b,color:#fff
+    style laptop_route fill:#8b5cf6,color:#fff
+    style email_route fill:#ec4899,color:#fff
+    style handle_other_request fill:#f97316,color:#fff
+    style waiting_clarification fill:#6366f1,color:#fff
+

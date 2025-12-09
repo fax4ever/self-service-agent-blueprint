@@ -1,0 +1,108 @@
+flowchart TD
+    START((🚀 Start)) --> waiting_for_interaction
+
+    subgraph waiting_for_interaction["⏳ waiting_for_interaction"]
+        W1["Type: waiting"]
+        W2["Waits for user input"]
+    end
+
+    waiting_for_interaction -->|"user_input"| validate_message
+
+    subgraph validate_message["🛡️ validate_message"]
+        V1["Type: intent_classifier"]
+        V2["Temperature: 0.0"]
+        V3["Classifies: SAFE / UNSAFE"]
+    end
+
+    validate_message -->|"🚫 UNSAFE"| unsafe_response
+    validate_message -->|"✅ SAFE"| step1
+
+    subgraph unsafe_response["🚫 Blocked"]
+        UR["'Prompt injection detected'<br/>_should_return_to_routing = true"]
+    end
+    unsafe_response --> END
+
+    subgraph handle_interaction["🤖 handle_interaction (llm_processor, temp: 0.3)"]
+        
+        subgraph step1["Step 1: Get Employee Info"]
+            S1["📋 Call get_employee_laptop_info<br/>from employee-info MCP server"]
+        end
+
+        subgraph step2["Step 2: Query Policy"]
+            S2["📚 Query laptop-refresh KB<br/>for refresh interval policy"]
+        end
+
+        subgraph step3["Step 3: Calculate Eligibility"]
+            S3["🧮 Convert ages to months<br/>Compare: laptop_age >= policy_months<br/>Determine ELIGIBLE / NOT ELIGIBLE"]
+        end
+
+        subgraph step4["Step 4: Present Info"]
+            S4["📄 Display ALL laptop info fields<br/>Show eligibility summary<br/>Ask if user wants to proceed"]
+        end
+
+        subgraph step5["Step 5: Get Laptop Options"]
+            S5["🔍 Query laptop-refresh KB<br/>Get ALL laptops for user's location<br/>with FULL specifications"]
+        end
+
+        subgraph step6["Step 6: Present Options"]
+            S6["📝 Show numbered list of laptops<br/>Include ALL 15 spec fields<br/>Ask user to select ONE"]
+        end
+
+        subgraph step7["Step 7: Confirm Selection"]
+            S7["❓ MANDATORY confirmation step<br/>Ask: 'Would you like to proceed<br/>with creating a ServiceNow ticket?'"]
+        end
+
+        subgraph step8["Step 8: Create Ticket"]
+            S8["🎫 Call open_laptop_refresh_ticket<br/>ONLY after explicit confirmation<br/>Check for duplicate tickets first"]
+        end
+
+        subgraph step9["Step 9: Wrap Up"]
+            S9["✅ Ask if anything else needed<br/>If 'no' → task_complete_return_to_router"]
+        end
+
+        step1 --> step2 --> step3 --> step4
+        step4 -->|"User wants to proceed"| step5
+        step5 --> step6
+        step6 -->|"User selects laptop"| step7
+        step7 -->|"User confirms"| step8
+        step8 --> step9
+    end
+
+    step4 -->|"User declines / out of scope"| route_back
+    step9 -->|"User says 'no'"| task_complete
+
+    subgraph route_back["↩️ Return to Router"]
+        RB["User requests routing<br/>or asks off-topic question"]
+    end
+
+    subgraph task_complete["✅ Task Complete"]
+        TC["task_complete_return_to_router<br/>_should_return_to_routing = true"]
+    end
+
+    route_back --> END
+    task_complete --> END
+    
+    step9 -->|"User has more questions"| waiting_for_interaction
+
+    subgraph END["🔚 end (terminal)"]
+        E1["Reset to handle_interaction<br/>Clear messages & state<br/>Return to routing agent"]
+    end
+
+    style START fill:#22c55e,color:#fff
+    style END fill:#ef4444,color:#fff
+    style waiting_for_interaction fill:#3b82f6,color:#fff
+    style validate_message fill:#f59e0b,color:#fff
+    style handle_interaction fill:#f3e8ff,color:#1e1b4b
+    style unsafe_response fill:#dc2626,color:#fff
+    style task_complete fill:#10b981,color:#fff
+    style route_back fill:#6366f1,color:#fff
+    style step1 fill:#c4b5fd,color:#1e1b4b
+    style step2 fill:#c4b5fd,color:#1e1b4b
+    style step3 fill:#c4b5fd,color:#1e1b4b
+    style step4 fill:#a78bfa,color:#fff
+    style step5 fill:#c4b5fd,color:#1e1b4b
+    style step6 fill:#c4b5fd,color:#1e1b4b
+    style step7 fill:#fbbf24,color:#1e1b4b
+    style step8 fill:#34d399,color:#1e1b4b
+    style step9 fill:#a78bfa,color:#fff
+
