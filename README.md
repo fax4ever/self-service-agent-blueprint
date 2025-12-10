@@ -275,6 +275,8 @@ The ServiceNow MCP server authenticates to the ServiceNow backend using a servic
 
 The quickstart includes visual workflow diagrams that illustrate how each agent's state machine operates. These diagrams help you understand the conversation flow, decision points, and transitions between states.
 
+> **Note:** These workflow diagrams are illustrative examples of agentic workflows and may not be aligned with the actual workflows implemented in the codebase. They are intended to help visualize the general concepts and patterns used in agent state machines, rather than serve as precise documentation of the current implementation.
+
 #### Available Workflow Diagrams
 
 | Agent | Diagram | Description |
